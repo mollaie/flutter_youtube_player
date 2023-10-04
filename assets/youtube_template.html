@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <header>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </header>
+  <style>
+    #player {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <body style="margin: 0; padding: 0; width: 100%; height: 100%">
+    <div id="wrapper" onclick="loadVideo()">
+      <!-- Thumbnail -->
+      <img
+        id="thumbnail"
+        src="https://img.youtube.com/vi/DEFAULT_OR_BLANK_VIDEO_ID/default.jpg"
+        style="width: 100%; height: auto"
+      />
+      <!-- Video Player -->
+      <div
+        id="player"
+        style="
+          display: none;
+          width: 100%;
+          min-width: 400px;
+          max-width: 800px;
+          height: 80%;
+          min-height: 300px;
+        "
+      ></div>
+    </div>
+    <script>
+      var videoId = window.bootstrapVideoId || "DEFAULT_OR_BLANK_VIDEO_ID";
+      document.getElementById("thumbnail").src =
+        "https://img.youtube.com/vi/" + videoId + "/default.jpg";
+
+      var tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      var player;
+
+      function loadVideo() {
+        // Hide thumbnail
+        document.getElementById("thumbnail").style.display = "none";
+        // Show player
+        document.getElementById("player").style.display = "block";
+
+        if (!player) {
+          initializePlayer();
+        } else {
+          player.playVideo();
+        }
+      }
+
+      function initializePlayer() {
+        player = new YT.Player("player", {
+          height: "HEIGHT_PLACEHOLDER",
+          width: "WIDTH_PLACEHOLDER",
+          videoId: videoId,
+          playerVars: { 'autoplay': 1, 'controls': 1 ,'disablekb': 1, 'showinfo': 0, 'playsinline': 1, 'fs': 1 },
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+            onError: onError,
+          },
+        });
+      }
+
+      function disableNavigation() {
+        var youtubeLogo = document.querySelector('.ytp-youtube-button');
+        if (youtubeLogo) {
+          youtubeLogo.style.pointerEvents = 'none';
+        }
+      }
+
+      function onPlayerReady(event) {
+        event.target.playVideo();
+
+        var requestFullScreen = event.target.requestFullScreen ||
+          event.target.mozRequestFullScreen ||
+          event.target.webkitRequestFullScreen;
+
+          if(requestFullScreen) {
+            requestFullScreen.bind(event.target)();
+          }
+
+          disableNavigation();
+      }
+
+      function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.PLAYING) {
+          // The video started playing
+          window.flutter_inappwebview.callHandler("videoStatus", "PLAYING");
+        } else if (event.data == YT.PlayerState.PAUSED) {
+          // The video is paused
+          window.flutter_inappwebview.callHandler("videoStatus", "PAUSED");
+        }
+      }
+
+      function onError(event) {
+        alert("An error occurred of type:" + event.data + " - " + videoId);
+        window.flutter_inappwebview.callHandler("videoStatus", "ERROR");
+        throw new Error(event.data);
+      }
+    </script>
+  </body>
+</html>
